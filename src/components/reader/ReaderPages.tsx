@@ -30,6 +30,8 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
   const [pages, setPages] = useState(1);
   const [width, setWidth] = useState(0);
   const [ready, setReady] = useState(false);
+  /** True while a (re)layout is pending; page turns wait for it. */
+  const [measuring, setMeasuring] = useState(true);
 
   const viewport = useRef<HTMLDivElement>(null);
   const turnLayer = useRef<HTMLDivElement>(null);
@@ -41,7 +43,9 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
     pos.current = { section, page, pages };
   }, [section, page, pages]);
 
-  const within = () => (pos.current.pages > 1 ? pos.current.page / (pos.current.pages - 1) : 0);
+  // A page's position is where it starts, so the last page of one section and the first page
+  // of the next never share a value.
+  const within = () => pos.current.page / Math.max(1, pos.current.pages);
 
   const layout = useCallback(() => {
     const vp = viewport.current;
@@ -58,11 +62,12 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
         ? Math.min(pos.current.page, total - 1)
         : 'end' in land
           ? total - 1
-          : Math.min(total - 1, Math.round(land.within * (total - 1)));
+          : Math.min(total - 1, Math.max(0, Math.round(land.within * total)));
       pos.current = { ...pos.current, page: target, pages: total };
       setPages(total);
       setPage(target);
       setReady(true);
+      setMeasuring(false);
     });
   }, []);
 
@@ -98,9 +103,9 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
     };
   }, [layout]);
 
-  const overall = overallFraction(sections, section, pages > 1 ? page / (pages - 1) : 0);
   const atStart = section === 0 && page === 0;
   const atEnd = section === sections.length - 1 && page >= pages - 1;
+  const overall = atEnd && ready ? 1 : overallFraction(sections, section, page / Math.max(1, pages));
 
   useEffect(() => {
     if (!ready) return;
@@ -121,8 +126,15 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
     );
   };
 
+  const readyRef = useRef(false);
+  useEffect(() => {
+    readyRef.current = ready;
+  }, [ready]);
+
   const go = useCallback(
     (dir: 1 | -1) => {
+      // Until the section is measured, page counts are unknown; ignore turns rather than guess.
+      if (!readyRef.current || landing.current) return;
       const { section: s, page: p, pages: total } = pos.current;
       const next = p + dir;
       if (next >= 0 && next < total) {
@@ -131,12 +143,14 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
         animate(dir);
       } else if (dir > 0 && s < sections.length - 1) {
         landing.current = { within: 0 };
+        setMeasuring(true);
         pos.current = { section: s + 1, page: 0, pages: 1 };
         setPage(0);
         setSection(s + 1);
         animate(dir);
       } else if (dir < 0 && s > 0) {
         landing.current = { end: true };
+        setMeasuring(true);
         pos.current = { section: s - 1, page: 0, pages: 1 };
         setPage(0);
         setSection(s - 1);
@@ -150,6 +164,7 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
     (fraction: number) => {
       const loc = locate(sections, fraction);
       landing.current = { within: loc.within };
+      setMeasuring(true);
       if (loc.section === pos.current.section) layout();
       else setSection(loc.section);
     },
@@ -206,6 +221,8 @@ export function ReaderPages({ book, blocks }: { book: ShelfBook; blocks: TextBlo
               ref={content}
               lang="en"
               data-testid="reader-content"
+              data-ready={ready && !measuring}
+              data-progress={overall.toFixed(5)}
               className={cn('h-full', font === 'serif' ? 'font-reading' : 'font-sans')}
               style={{
                 columnWidth: width ? `${width}px` : undefined,

@@ -69,7 +69,7 @@ export function ShelfRowSkeleton({ title }: { title: string }) {
 
 export function ResultsSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div aria-busy="true" aria-label="Loading results" className="divide-y divide-rule">
+    <div role="status" aria-busy="true" aria-label="Loading results" className="divide-y divide-rule">
       {Array.from({ length: count }, (_, i) => (
         <div key={i} className="flex gap-4 py-6 sm:gap-6">
           <Skeleton className="aspect-[2/3] w-[84px] shrink-0 sm:w-[108px]" />

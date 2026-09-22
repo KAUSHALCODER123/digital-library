@@ -3,10 +3,60 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { buttonClasses } from '@/components/ui/button';
+import { signOutEverywhere } from '@/lib/auth/signOut';
+import { useAuth } from '@/lib/auth/store';
 import { NAV_LINKS } from './nav';
+
+const linkClass =
+  'flex w-full items-center justify-between py-3.5 text-body text-ink no-underline aria-[current=page]:font-semibold aria-[current=page]:text-forest';
+
+/** On small screens the account menu lives here instead of the header. */
+function AccountLinks({ pathname }: { pathname: string }) {
+  const { enabled, status, user } = useAuth();
+  const router = useRouter();
+  if (!enabled || status === 'loading') return null;
+  if (status === 'guest' || !user) {
+    return (
+      <li>
+        <Link href={`/login?next=${encodeURIComponent(pathname)}`} className={linkClass}>
+          Sign in
+        </Link>
+      </li>
+    );
+  }
+  return (
+    <>
+      <li>
+        <Link href="/account" aria-current={pathname === '/account' ? 'page' : undefined} className={linkClass}>
+          Account settings
+        </Link>
+      </li>
+      {user.role === 'staff' && (
+        <li>
+          <Link href="/admin" aria-current={pathname === '/admin' ? 'page' : undefined} className={linkClass}>
+            Library staff tools
+          </Link>
+        </li>
+      )}
+      <li>
+        <button
+          type="button"
+          className={linkClass}
+          onClick={async () => {
+            await signOutEverywhere();
+            router.push('/');
+            router.refresh();
+          }}
+        >
+          Sign out
+        </button>
+      </li>
+    </>
+  );
+}
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -43,6 +93,7 @@ export function MobileNav() {
                   </Link>
                 </li>
               ))}
+              <AccountLinks pathname={pathname} />
             </ul>
           </nav>
         </Dialog.Content>

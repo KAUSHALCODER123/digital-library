@@ -95,7 +95,7 @@ export function Reviews({ bookId, title }: { bookId: string; title: string }) {
       </div>
 
       {reviews === null ? (
-        <div className="mt-6 space-y-4" aria-busy="true" aria-label="Loading reviews">
+        <div role="status" className="mt-6 space-y-4" aria-busy="true" aria-label="Loading reviews">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
         </div>

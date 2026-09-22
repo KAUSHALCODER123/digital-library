@@ -7,5 +7,5 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Skip static assets, image optimization and the public text/metadata routes.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|robots.txt|sitemap.xml|api/gutenberg|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|robots.txt|sitemap.xml|api/gutenberg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
 };

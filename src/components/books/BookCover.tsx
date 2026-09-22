@@ -37,7 +37,6 @@ export function BookCover({ book, size = 'md', preload, className, decorative }:
   // A cached image can finish before hydration attaches onLoad; check once after mount.
   useEffect(() => {
     const img = imgRef.current;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with the DOM image state
     if (img?.complete && img.naturalWidth > 0) setLoaded(true);
   }, []);
   const [revealed, setRevealed] = useState(false);

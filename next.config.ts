@@ -9,6 +9,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   turbopack: { root: __dirname },
+  // The e2e suite builds into its own folder so it never clobbers the dev or production build.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   images: {
     // Only cover hosts from the book sources. Open Library covers redirect to archive.org mirrors.
     remotePatterns: [

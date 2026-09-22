@@ -43,6 +43,8 @@ export const useReaderPrefs = create<Prefs>()(
         }
       }),
       partialize: ({ theme, font, size, lineHeight }) => ({ theme, font, size, lineHeight }),
+      // The reader is server-rendered with defaults; saved prefs load after mount (ReaderShell).
+      skipHydration: true,
       // Guard against hand-edited or stale storage.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Prefs>;

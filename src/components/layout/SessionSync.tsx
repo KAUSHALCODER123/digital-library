@@ -17,6 +17,8 @@ import { getBrowserSupabase } from '@/lib/supabase/client';
  */
 export function SessionSync() {
   useEffect(() => {
+    // Lets tests (and CSS, if ever needed) know client JavaScript is in control.
+    document.documentElement.dataset.hydrated = 'true';
     void useShelf.persist.rehydrate();
     const onStorage = (e: StorageEvent) => {
       if (e.key === SHELF_STORAGE_KEY) void useShelf.persist.rehydrate();

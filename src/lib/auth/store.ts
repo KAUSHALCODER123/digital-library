@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 
 export type SessionUser = {
   id: string;
@@ -19,8 +20,9 @@ type AuthState = {
 };
 
 export const useAuth = create<AuthState>((set) => ({
-  status: 'loading',
-  enabled: true,
+  // Known at build time, so the header never shows an account placeholder when accounts are off.
+  status: isSupabaseConfigured() ? 'loading' : 'guest',
+  enabled: isSupabaseConfigured(),
   user: null,
   set: (s) => set(s),
 }));

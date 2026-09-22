@@ -25,7 +25,7 @@ export function Rating({ value, count, className }: { value?: number; count?: nu
       </span>
       <span aria-hidden className="tabular-nums">
         {value.toFixed(1)}
-        {count ? <span className="text-ink-muted/80"> ({compact(count)})</span> : null}
+        {count ? <span className="text-ink-muted"> ({compact(count)})</span> : null}
       </span>
     </span>
   );

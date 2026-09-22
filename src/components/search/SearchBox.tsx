@@ -39,22 +39,33 @@ export function SearchBox({ variant, defaultValue = '', autoFocus, live, params,
   const [hint, setHint] = useState<string | null>(null);
   const lastPushed = useRef(defaultValue);
 
-  // Keep the box in sync when the URL changes (back/forward, filter links).
+  const [hydrated, setHydrated] = useState(false);
+  // Keep anything typed before the page finished loading (slow phones), then mark ready.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mirror external URL state
+    const typed = inputRef.current?.value;
+    if (typed && typed !== defaultValue) setValue(typed);
+    if (document.activeElement === inputRef.current) setOpen(true);
+    setHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
+
+  // Keep the box in sync when the URL changes (back/forward, filter links).
+  const prevDefault = useRef(defaultValue);
+  useEffect(() => {
+    if (prevDefault.current === defaultValue) return;
+    prevDefault.current = defaultValue;
     setValue(defaultValue);
     lastPushed.current = defaultValue;
   }, [defaultValue]);
 
-  // Suggestions (hero/header).
+  const parsedValue = parseQuery(value);
+  const suggestable = !live && parsedValue.kind === 'text' && parsedValue.q.length >= 2;
+
+  // Suggestions (hero/header). Stale items stay hidden because visibility depends on `suggestable`.
   useEffect(() => {
     if (live) return;
     const parsed = parseQuery(value);
-    if (parsed.kind !== 'text' || parsed.q.length < 2) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
+    if (parsed.kind !== 'text' || parsed.q.length < 2) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -72,6 +83,7 @@ export function SearchBox({ variant, defaultValue = '', autoFocus, live, params,
     return () => {
       clearTimeout(timer);
       controller.abort();
+      setLoading(false);
     };
   }, [value, live]);
 
@@ -88,7 +100,7 @@ export function SearchBox({ variant, defaultValue = '', autoFocus, live, params,
     return () => clearTimeout(timer);
   }, [value, live, router, params]);
 
-  const showList = !live && open && value.trim().length >= 2 && (items.length > 0 || loading);
+  const showList = suggestable && open && (items.length > 0 || loading);
   const optionCount = items.length + 1; // + "search for" row
 
   function go(q: string) {
@@ -141,7 +153,7 @@ export function SearchBox({ variant, defaultValue = '', autoFocus, live, params,
   const isHeader = variant === 'header';
 
   return (
-    <form role="search" onSubmit={onSubmit} className={cn('relative', className)} action="/search">
+    <form role="search" onSubmit={onSubmit} className={cn('relative', className)} action="/search" data-hydrated={hydrated}>
       <label htmlFor={`${id}-input`} className="sr-only">
         Search the catalog
       </label>
