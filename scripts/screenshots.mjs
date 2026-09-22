@@ -15,7 +15,7 @@ const shots = [
   { name: 'detail-desktop-dark', path: '/books/pride-and-prejudice--OL66554W', theme: 'dark', device: 'desktop' },
   { name: 'reader-desktop-sepia', path: '/read/pride-and-prejudice--pg-1342', theme: 'light', device: 'desktop', reader: 'sepia' },
   { name: 'genres-desktop-light', path: '/genres', theme: 'light', device: 'desktop' },
-  { name: 'shelf-desktop-light', path: '/shelf', theme: 'light', device: 'desktop', seedShelf: true },
+  { name: 'shelf-desktop-light', path: '/shelf?tab=READING', theme: 'light', device: 'desktop', seedShelf: true },
   { name: 'home-mobile-light', path: '/', theme: 'light', device: 'mobile' },
   { name: 'search-mobile-dark', path: '/search?q=dune', theme: 'dark', device: 'mobile' },
   { name: 'detail-mobile-light', path: '/books/pride-and-prejudice--OL66554W', theme: 'light', device: 'mobile' },
