@@ -1,26 +1,291 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
+/* Dark mode follows the resolved theme set on <html data-theme> by the inline theme script. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ---------------------------------------------------------------------------------------------
+   Design tokens. Every component reads these; nothing hard-codes a color.
+   Contrast pairs are verified in src/lib/design/contrast.test.ts.
+   ------------------------------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f6f1e6;
+  --paper-raised: #fbf8f1;
+  --paper-sunk: #ede5d4;
+  --ink: #1e2230;
+  --ink-muted: #545766;
+  --ink-faint: #8c8e98; /* decorative only, never body text */
+  --forest: #1f4d3a;
+  --forest-hover: #173d2e;
+  --on-forest: #f6f1e6;
+  --brass: #a07c3f; /* stars, rules, large marks */
+  --brass-ink: #74561f; /* brass-toned text */
+  --rule: #d9cfbc;
+  --rule-strong: #bfb299;
+  --danger: #9b2c2c;
+  --ledge: #6b4f32;
+  --ledge-shadow: rgb(60 40 20 / 0.28);
+  --card: #fffdf7;
+  --card-rule: #c9dbe6;
+  --card-header: #1f4d3a;
+  --focus: #1f4d3a;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --paper: #1a1714;
+  --paper-raised: #24201b;
+  --paper-sunk: #13110f;
+  --ink: #ede6d8;
+  --ink-muted: #b0a898;
+  --ink-faint: #6f685d;
+  --forest: #86b9a0;
+  --forest-hover: #9dc9b3;
+  --on-forest: #10201a;
+  --brass: #c9a56a;
+  --brass-ink: #d9bd86;
+  --rule: #3a342c;
+  --rule-strong: #54493b;
+  --danger: #e59a9a;
+  --ledge: #4a3a28;
+  --ledge-shadow: rgb(0 0 0 / 0.5);
+  --card: #2a251f;
+  --card-rule: #3b4a52;
+  --card-header: #86b9a0;
+  --focus: #9dc9b3;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-forest: var(--forest);
+  --color-forest-hover: var(--forest-hover);
+  --color-on-forest: var(--on-forest);
+  --color-brass: var(--brass);
+  --color-brass-ink: var(--brass-ink);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-danger: var(--danger);
+  --color-ledge: var(--ledge);
+  --color-card: var(--card);
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+  --font-reading: var(--font-literata), Georgia, serif;
+  --font-typed: var(--font-courier), 'Courier New', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@theme {
+  /* Type scale, ratio 1.25 from a 15px UI base. */
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.45;
+  --text-ui: 0.9375rem;
+  --text-ui--line-height: 1.5;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.65;
+  --text-lead: 1.3125rem;
+  --text-lead--line-height: 1.5;
+  --text-h3: 1.625rem;
+  --text-h3--line-height: 1.25;
+  --text-h2: 2.0625rem;
+  --text-h2--line-height: 1.15;
+  --text-h1: 2.5625rem;
+  --text-h1--line-height: 1.08;
+  --text-display: 3.25rem;
+  --text-display--line-height: 1.02;
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+
+  --breakpoint-xs: 26rem;
+
+  --animate-sheet-up: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-page-turn: page-turn 180ms ease-out;
+
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes page-turn {
+    from {
+      opacity: 0.35;
+      transform: translateX(var(--turn-from, 12px));
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-ui);
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--brass) 35%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  /* Browsers default to underlines; keep them on prose links for accessibility. */
+  a {
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
+  }
+  [dir='rtl'] {
+    text-align: start;
+  }
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* The shelf ledge covers stand on. */
+  .ledge-bar {
+    height: 7px;
+    background: linear-gradient(to bottom, color-mix(in oklab, var(--ledge) 80%, white) 0 2px, var(--ledge) 2px);
+    box-shadow: 0 7px 10px -5px var(--ledge-shadow);
+    border-radius: 1px;
+  }
+
+  /* Physical book: spine highlight on the left edge and a soft drop shadow. */
+  .book-object {
+    position: relative;
+    border-radius: 1px 3px 3px 1px;
+    box-shadow:
+      0 1px 1px rgb(0 0 0 / 0.08),
+      0 6px 14px -6px rgb(40 25 10 / 0.35);
+    transition:
+      transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 220ms ease;
+    transform-origin: bottom center;
+  }
+  .book-object::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      to right,
+      rgb(0 0 0 / 0.22) 0,
+      rgb(255 255 255 / 0.18) 2.5%,
+      rgb(0 0 0 / 0.08) 5%,
+      transparent 9%
+    );
+    pointer-events: none;
+  }
+  .book-lift:hover .book-object,
+  .book-lift:focus-visible .book-object {
+    transform: translateY(-4px) rotate(-1.2deg);
+    box-shadow:
+      0 2px 2px rgb(0 0 0 / 0.08),
+      0 14px 22px -10px rgb(40 25 10 / 0.45);
+  }
+
+  /* Ruled index-card paper for the hero and empty states. */
+  .index-card {
+    background-color: var(--card);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(2rem - 1px),
+      var(--card-rule) calc(2rem - 1px),
+      var(--card-rule) 2rem
+    );
+    background-position: 0 3.75rem;
+    background-size: 100% calc(100% - 3.75rem);
+    background-repeat: no-repeat;
+    border: 1px solid var(--rule);
+    box-shadow:
+      0 1px 0 rgb(0 0 0 / 0.04),
+      0 18px 40px -24px rgb(40 25 10 / 0.4);
+  }
+  .index-card-header {
+    border-bottom: 2px solid var(--card-header);
+  }
+  .punch-hole {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 999px;
+    background: var(--paper);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.35);
+  }
+
+  .prose-reading p + p {
+    margin-top: 0.9em;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .book-lift:hover .book-object,
+  .book-lift:focus-visible .book-object {
+    transform: none;
+  }
 }

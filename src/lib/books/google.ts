@@ -153,11 +153,11 @@ export async function googleSearch(p: SearchParams, genreSubject?: string): Prom
   return { items, total: data.totalItems ?? items.length };
 }
 
-export async function googleByIsbn(isbn13: string): Promise<BookSummary[]> {
+export async function googleByIsbn(isbn13: string, timeoutMs?: number): Promise<BookSummary[]> {
   const url = new URL(BASE);
   url.searchParams.set('q', `isbn:${isbn13}`);
   url.searchParams.set('maxResults', '5');
-  const data = await fetchJson<GoogleSearchResponse>(withKey(url), { revalidate: 86400 });
+  const data = await fetchJson<GoogleSearchResponse>(withKey(url), { revalidate: 86400, timeoutMs });
   return (data.items ?? []).map(mapGoogleVolume).filter((b): b is BookSummary => b !== null);
 }
 

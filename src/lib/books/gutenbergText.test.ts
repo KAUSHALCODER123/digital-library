@@ -34,6 +34,31 @@ describe('Gutenberg text', () => {
     ]);
   });
 
+  it('drops illustration placeholders and underscore italics', () => {
+    const raw =
+      '[Illustration:\n\n  GEORGE ALLEN\n  PUBLISHER\n]\n\nIt is a truth _universally_ acknowledged, that a man in possession of a\ngood fortune must be in want of a wife.';
+    expect(parseGutenbergText(raw)).toEqual([
+      {
+        type: 'paragraph',
+        text: 'It is a truth universally acknowledged, that a man in possession of a good fortune must be in want of a wife.',
+      },
+    ]);
+  });
+
+  it('drops italic markers that span lines and paragraphs', () => {
+    const raw =
+      '_It seems to me the most perfect, and I, for my part, declare for\nPride and Prejudice unhesitatingly, as I will show._\n\n_In the first place, the book was written very early indeed, about\nseventeen ninety-six._';
+    const text = parseGutenbergText(raw)
+      .map((b) => b.text)
+      .join(' ');
+    expect(text).not.toContain('_');
+    expect(text).toContain('declare for Pride and Prejudice unhesitatingly');
+  });
+
+  it('keeps underscores inside words and identifiers', () => {
+    expect(parseGutenbergText('See file_name_here for details, written at some length today.')[0].text).toContain('file_name_here');
+  });
+
   it('works when markers are missing', () => {
     expect(parseGutenbergText('Just text.')).toEqual([{ type: 'paragraph', text: 'Just text.' }]);
   });

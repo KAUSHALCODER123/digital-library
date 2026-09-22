@@ -215,13 +215,15 @@ export function titleAuthorKey(title: string, author: string | undefined): strin
   const norm = (s: string) =>
     s
       .normalize('NFKD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/\p{M}/gu, '')
       .toLowerCase()
       .replace(/^(the|a|an)\s+/, '')
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
   // Subtitles vary between sources ("Dune" vs "Dune: Deluxe Edition"); compare main titles.
   const main = title.split(/[:(;]/)[0] ?? title;
-  const surname = author ? norm(author).split(' ').pop() ?? '' : '';
-  return `${norm(main)}|${surname}`;
+  // First initial + surname: "J.R.R. Tolkien" == "J. R. R. Tolkien", but Frank Herbert != Brian Herbert.
+  const parts = author ? norm(author).split(' ').filter(Boolean) : [];
+  const person = parts.length > 1 ? `${parts[0][0]}.${parts[parts.length - 1]}` : (parts[0] ?? '');
+  return `${norm(main)}|${person}`;
 }

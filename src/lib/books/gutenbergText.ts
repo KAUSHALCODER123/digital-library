@@ -43,6 +43,16 @@ export function toBlocks(body: string): TextBlock[] {
   return blocks;
 }
 
+/** Plain-text markup conventions: `[Illustration: …]` placeholders and `_italic_` underscores. */
+export function cleanMarkup(body: string): string {
+  return body
+    .replace(/\[Illustration[^\]]{0,2000}\]/gi, '')
+    // Italic markers often span lines and paragraphs, so drop underscores at word edges rather
+    // than matching pairs; underscores inside words (file_name) are kept.
+    .replace(/(^|[^\p{L}\p{N}_])_+(?=[\p{L}\p{N}])/gmu, '$1')
+    .replace(/(?<=[\p{L}\p{N}\p{P}])_+(?=[^\p{L}\p{N}_]|$)/gmu, '');
+}
+
 export function parseGutenbergText(raw: string): TextBlock[] {
-  return toBlocks(stripBoilerplate(raw));
+  return toBlocks(cleanMarkup(stripBoilerplate(raw)));
 }

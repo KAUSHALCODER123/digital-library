@@ -102,9 +102,11 @@ describe('titleAuthorKey', () => {
     expect(titleAuthorKey('The Hobbit: Or There and Back Again', 'J. R. R. Tolkien')).toBe(
       titleAuthorKey('Hobbit', 'J.R.R. Tolkien'),
     );
-    expect(titleAuthorKey('Les Misérables', 'Victor Hugo')).toBe(titleAuthorKey('Les Miserables', 'Hugo'));
+    expect(titleAuthorKey('Les Misérables', 'Victor Hugo')).toBe(titleAuthorKey('Les Miserables', 'Víctor Hugo'));
   });
   it('keeps different books apart', () => {
     expect(titleAuthorKey('Dune', 'Frank Herbert')).not.toBe(titleAuthorKey('Dune Messiah', 'Frank Herbert'));
+    // Regression: a sequel by a relative shares the main title and surname.
+    expect(titleAuthorKey('Dune', 'Frank Herbert')).not.toBe(titleAuthorKey('Dune: House Harkonnen', 'Brian Herbert'));
   });
 });

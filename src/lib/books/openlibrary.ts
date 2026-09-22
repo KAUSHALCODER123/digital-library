@@ -151,22 +151,22 @@ export async function olSearch(p: SearchParams, genreSubject?: string): Promise<
   return { items, total: data.numFound ?? data.num_found ?? items.length };
 }
 
-export async function olByIsbn(isbn13: string): Promise<BookSummary[]> {
+export async function olByIsbn(isbn13: string, timeoutMs?: number): Promise<BookSummary[]> {
   const url = new URL(`${BASE}/search.json`);
   url.searchParams.set('isbn', isbn13);
   url.searchParams.set('limit', '3');
   url.searchParams.set('fields', SEARCH_FIELDS);
-  const data = await fetchJson<OLSearchResponse>(url.toString(), { revalidate: 86400 });
+  const data = await fetchJson<OLSearchResponse>(url.toString(), { revalidate: 86400, timeoutMs });
   return (data.docs ?? []).map(mapOLDoc).filter((b): b is BookSummary => b !== null);
 }
 
-export async function olByTitleAuthor(title: string, author?: string): Promise<BookSummary[]> {
+export async function olByTitleAuthor(title: string, author?: string, timeoutMs?: number): Promise<BookSummary[]> {
   const url = new URL(`${BASE}/search.json`);
   url.searchParams.set('title', title);
   if (author) url.searchParams.set('author', author);
   url.searchParams.set('limit', '3');
   url.searchParams.set('fields', `${SEARCH_FIELDS},ia`);
-  const data = await fetchJson<OLSearchResponse>(url.toString(), { revalidate: 86400 });
+  const data = await fetchJson<OLSearchResponse>(url.toString(), { revalidate: 86400, timeoutMs });
   return (data.docs ?? []).map(mapOLDoc).filter((b): b is BookSummary => b !== null);
 }
 
@@ -247,7 +247,7 @@ export async function resolvePublicIaId(candidates: string[]): Promise<string | 
   url.searchParams.append('sort[]', 'downloads desc');
   url.searchParams.set('rows', '1');
   url.searchParams.set('output', 'json');
-  const data = await fetchJson<IASearch>(url.toString(), { revalidate: 86400 });
+  const data = await fetchJson<IASearch>(url.toString(), { revalidate: 86400, timeoutMs: 3500 });
   const id = data.response?.docs?.[0]?.identifier;
   return id && ids.includes(id) ? id : undefined;
 }
@@ -307,6 +307,21 @@ export async function olPublicDomain(limit = 20): Promise<BookSummary[]> {
   url.searchParams.set('fields', SEARCH_FIELDS);
   const data = await fetchJson<OLSearchResponse>(url.toString(), { revalidate: 86400 });
   return (data.docs ?? []).map(mapOLDoc).filter((b): b is BookSummary => b !== null);
+}
+
+/** Recent fiction with covers; the fallback for "New arrivals" when Google is unavailable. */
+export async function olRecent(limit = 20): Promise<BookSummary[]> {
+  const url = new URL(`${BASE}/search.json`);
+  const from = new Date().getFullYear() - 2;
+  url.searchParams.set('q', `subject:fiction first_publish_year:[${from} TO ${from + 2}] language:eng`);
+  url.searchParams.set('sort', 'new');
+  url.searchParams.set('limit', String(limit * 2));
+  url.searchParams.set('fields', SEARCH_FIELDS);
+  const data = await fetchJson<OLSearchResponse>(url.toString(), { revalidate: 21600 });
+  return (data.docs ?? [])
+    .map(mapOLDoc)
+    .filter((b): b is BookSummary => b !== null && !!b.coverUrl)
+    .slice(0, limit);
 }
 
 type OLAuthorSearch = { docs?: Array<{ key?: string; name?: string; work_count?: number }> };

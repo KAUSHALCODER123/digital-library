@@ -26,7 +26,59 @@ type FetchOptions = {
   accept?: string;
 };
 
+/**
+ * Per-host circuit breaker. When a source rate-limits us or stops answering, later calls fail
+ * fast for a short while instead of each waiting out the full timeout.
+ */
+const breaker = new Map<string, number>();
+const recentTimeouts = new Map<string, number[]>();
+const RATE_LIMIT_COOLDOWN = 30_000;
+/** A single slow request is normal; three within 30s means the host is struggling. */
+const TIMEOUT_THRESHOLD = 3;
+const TIMEOUT_WINDOW = 30_000;
+const TIMEOUT_COOLDOWN = 10_000;
+
+function recordFailure(host: string, kind: UpstreamErrorKind) {
+  const now = Date.now();
+  if (kind === 'rate-limited') {
+    breaker.set(host, now + RATE_LIMIT_COOLDOWN);
+  } else if (kind === 'timeout') {
+    const times = (recentTimeouts.get(host) ?? []).filter((t) => now - t < TIMEOUT_WINDOW);
+    times.push(now);
+    recentTimeouts.set(host, times);
+    if (times.length >= TIMEOUT_THRESHOLD) {
+      breaker.set(host, now + TIMEOUT_COOLDOWN);
+      recentTimeouts.delete(host);
+    }
+  }
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+export function resetBreakers(): void {
+  breaker.clear();
+  recentTimeouts.clear();
+}
+
 async function request(url: string, opts: FetchOptions): Promise<Response> {
+  const host = hostOf(url);
+  const openUntil = breaker.get(host);
+  if (openUntil && openUntil > Date.now()) throw new UpstreamError('rate-limited', url);
+  try {
+    return await rawRequest(url, opts);
+  } catch (err) {
+    if (err instanceof UpstreamError) recordFailure(host, err.kind);
+    throw err;
+  }
+}
+
+async function rawRequest(url: string, opts: FetchOptions): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   let res: Response;

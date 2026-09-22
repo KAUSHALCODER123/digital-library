@@ -14,6 +14,7 @@ import {
   olEditions,
   olEditionToWork,
   olPublicDomain,
+  olRecent,
   olSearch,
   olTrending,
   olWork,
@@ -115,12 +116,15 @@ export async function lookupIsbn(isbn13: string): Promise<BookSummary[]> {
 // Detail
 // ---------------------------------------------------------------------------------------------
 
+/** Enrichment is optional; don't let it hold the page for long. */
+const ENRICH_TIMEOUT = 3000;
+
 export type BookLookup = { book: BookDetail } | { redirectTo: string } | null;
 
 async function enrichFromOpenLibrary(book: BookDetail): Promise<BookDetail> {
   const matches = book.isbn13
-    ? await soft('ol isbn', olByIsbn(book.isbn13))
-    : await soft('ol title', olByTitleAuthor(book.title, book.authors[0]));
+    ? await soft('ol isbn', olByIsbn(book.isbn13, ENRICH_TIMEOUT))
+    : await soft('ol title', olByTitleAuthor(book.title, book.authors[0], ENRICH_TIMEOUT));
   const match = matches?.[0];
   if (!match) return book;
   let merged = mergeBooks(book, match, { keepIdentity: true });
@@ -136,7 +140,7 @@ async function enrichFromOpenLibrary(book: BookDetail): Promise<BookDetail> {
 
 async function enrichFromGoogle(book: BookDetail): Promise<BookDetail> {
   if (!book.isbn13) return book;
-  const matches = await soft('google isbn', googleByIsbn(book.isbn13));
+  const matches = await soft('google isbn', googleByIsbn(book.isbn13, ENRICH_TIMEOUT));
   const match = matches?.[0];
   return match ? mergeBooks(book, match, { keepIdentity: true }) : book;
 }
@@ -270,10 +274,12 @@ export async function getShelfRow(key: ShelfRowKey, limit = 18): Promise<BookSum
       if (pg?.length) return pg;
       return olPublicDomain(limit);
     }
-    case 'new-arrivals':
-      return dedupeBooks(await googleNewest('fiction', 40))
-        .filter((b) => b.coverUrl && !b.mature)
-        .slice(0, limit);
+    case 'new-arrivals': {
+      const google = await soft('google newest', googleNewest('fiction', 40));
+      const fromGoogle = dedupeBooks(google ?? []).filter((b) => b.coverUrl && !b.mature);
+      if (fromGoogle.length >= 6) return fromGoogle.slice(0, limit);
+      return olRecent(limit);
+    }
     case 'staff-picks': {
       const found = await Promise.all(DEFAULT_STAFF_PICKS.map((isbn) => soft('staff pick', olByIsbn(isbn))));
       return found.flatMap((r) => (r?.[0] ? [r[0]] : [])).slice(0, limit);

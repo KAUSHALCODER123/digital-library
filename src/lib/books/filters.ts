@@ -55,10 +55,9 @@ export const searchParamsSchema = z.object({
 });
 
 export type ParsedSearchParams = z.infer<typeof searchParamsSchema>;
+export type SearchPageParams = ParsedSearchParams & { query: ReturnType<typeof parseQuery> };
 
-export function parseSearchParams(input: Record<string, string | string[] | undefined>): ParsedSearchParams & {
-  query: ReturnType<typeof parseQuery>;
-} {
+export function parseSearchParams(input: Record<string, string | string[] | undefined>): SearchPageParams {
   const parsed = searchParamsSchema.parse(input);
   // A reversed range is almost always a typo; swap instead of returning nothing.
   if (parsed.yearFrom !== undefined && parsed.yearTo !== undefined && parsed.yearFrom > parsed.yearTo) {

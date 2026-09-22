@@ -15,7 +15,7 @@ const PG_ID = /^\d{1,7}$/;
 export function slugify(input: string, maxLength = 60): string {
   const s = input
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/&/g, ' and ')
     .replace(/[^a-z0-9]+/g, '-')
